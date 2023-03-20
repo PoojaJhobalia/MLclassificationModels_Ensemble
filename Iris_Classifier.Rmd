@@ -1,0 +1,134 @@
+---
+title: "Iris_multipleClassifier"
+author: "Pooja"
+date: "2023-03-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+#INBUILT IRIS DATASET
+
+```
+
+```{r}
+
+#SVM
+
+data(iris)
+mydata <- cbind(iris[5],iris[1:4]) 
+
+library(e1071)
+mysvm <- svm(Species ~ ., iris)
+mysvm.pred <- predict(mysvm, iris)
+table(mysvm.pred,iris$Species)
+
+
+
+```
+
+
+
+```{r}
+
+#Naive Bayes
+
+installed.packages("klaR")
+
+library(klaR)
+mynb <- NaiveBayes(Species ~ ., iris)
+mynb.pred <- predict(mynb,iris)
+table(mynb.pred$class,iris$Species)
+#              setosa versicolor virginica
+#   setosa     50      0          0
+#   versicolor  0     47          3
+#   virginica   0      3         47
+```
+
+
+```{r}
+
+# Neural Network
+
+library(nnet)
+mynnet <- nnet(Species ~ ., iris, size=1)
+mynnet.pred <- predict(mynnet,iris,type="class")
+table(mynnet.pred,iris$Species)
+# mynnet.pred  setosa versicolor virginica
+#   setosa     50      0          0
+#   versicolor  0     49          1
+#   virginica   0      1         49
+
+library(MASS)
+data(iris)
+
+
+```
+
+
+```{r}
+
+#Decision trees
+library(rpart)
+mytree <- rpart(Species ~ ., iris)
+plot(mytree); text(mytree) # in "iris_tree.ps"
+summary(mytree)
+mytree.pred <- predict(mytree,iris,type="class")
+table(mytree.pred,iris$Species)
+# mytree.pred  setosa versicolor virginica
+#   setosa     50      0          0
+#   versicolor  0     47          1
+#   virginica   0      3         49
+
+
+
+```
+
+
+```{r}
+# Leave-1-Out Cross Validation (LOOCV)
+ans <- numeric(length(iris[,1]))
+for (i in 1:length(iris[,1])) {
+  mytree <- rpart(Species ~ ., iris[-i,])
+  mytree.pred <- predict(mytree,iris[i,],type="class")
+  ans[i] <- mytree.pred
+}
+ans <- factor(ans,labels=levels(iris$Species))
+table(ans,iris$Species)
+# The same as above in this case
+```
+
+
+```{r}
+
+#Quadratic Discriminant Analysis
+library(MASS)
+myqda <- qda(Species ~ ., iris)
+myqda.pred <- predict(myqda, iris)
+table(myqda.pred$class,iris$Species)
+
+
+#Regularised Discriminant Analysis
+library(klaR)
+myrda <- rda(Species ~ ., iris)
+myrda.pred <- predict(myrda, iris)
+table(myrda.pred$class,iris$Species)
+
+
+```
+
+
+```{r}
+
+#Random Forests
+library(randomForest)
+myrf <- randomForest(Species ~ .,iris)
+myrf.pred <- predict(myrf, iris)
+table(myrf.pred, iris$Species)
+
+# (Suspiciously correct! - need to read the manual)
+
+```
+
