@@ -1,7 +1,7 @@
 ---
-title: "ProjectTwo"
+title: "BreastCancer_Ensemble"
 author: "Pooja"
-date: "2023-03-20"
+date: "2023-03-21"
 output: word_document
 ---
 
@@ -9,10 +9,11 @@ output: word_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
 ```{r}
+
 #load the mlbench package which has the BreastCancer data set
-require(mlbench)
-# if you don't have any required package, use the install.packages() command
+library(mlbench)
 
 # load the data set
 data(BreastCancer)
@@ -20,8 +21,6 @@ ls(BreastCancer)
 
 # some algorithms don't like missing values, so remove rows with missing values
 BreastCancer <- na.omit(BreastCancer) 
-
-
 # remove the unique identifier, which is useless and would confuse the machine learning algorithms
 BreastCancer$Id <- NULL 
 
@@ -29,14 +28,8 @@ head(BreastCancer)
 str(BreastCancer)
 
 
-```
-
-
-```{r}
-
 df2 <- data.frame(sapply(BreastCancer[1:9], function(x) as.numeric(as.character(x))))
 z <- scale(df2[,1:9],center=TRUE,scale=TRUE)
-
 head(z)
 
 
@@ -45,23 +38,31 @@ head(z)
 
 
 ```{r}
-#SVM model
+#SVM
+
 library(e1071)
 
 mysvm <- svm(Class ~ ., BreastCancer)
 mysvm.pred <- predict(mysvm, BreastCancer)
+
 table(mysvm.pred,BreastCancer$Class)
 
 
 ```
-```{r}
 
-#Naive Bayes Model
+```{r}
+#Naive Bayes
+
+#install.packages("klaR")
 library(klaR)
+
 mynb <- NaiveBayes(Class ~ ., BreastCancer)
 mynb.pred <- predict(mynb,BreastCancer)
 head(mynb.pred$class)
+
+
 table(mynb.pred$class,BreastCancer$Class)
+
 str(mysvm.pred)
 str(mynb.pred)
 #              setosa versicolor virginica
@@ -70,28 +71,40 @@ str(mynb.pred)
 #   virginica   0      3         47
 
 
+
 ```
 
 
 ```{r}
 
-#Neural Network Model
+#Neural Network
+
 library(nnet)
 library(neuralnet)
+
+
 str(BreastCancer)
+
 for (i in c(1:9)){
 BreastCancer[,i] <-(as.numeric(BreastCancer[,i])-min(as.numeric(BreastCancer[,i]))) /
   (max(as.numeric(BreastCancer[,i]))-min(as.numeric(BreastCancer[,i])))
 }
-mynnet <- neuralnet(Class ~ ., BreastCancer, hidden=c(5,4))
-head(BreastCancer)
-str(mynnet)
-mynnet.pred <- predict(mynnet,BreastCancer,type="class")
-table(mynnet.pred,BreastCancer$Class)
 
 
-library(MASS)
-data(BreastCancer)
+library(caret)
+# convert categorical variables to dummy variables
+dummy_transform <- dummyVars(Class ~ ., data = BreastCancer)
+BC_transformed <- data.frame(predict(dummy_transform, newdata = BreastCancer))
+BC_transformed$Class <- BreastCancer$Class
+
+
+mynnet <- neuralnet(Class ~ ., BC_transformed, hidden=c(5,4))
+mynnet.pred <- predict(mynnet,BC_transformed)
+mynnet.class <- ifelse(mynnet.pred > 0.5, "malignant", "benign")
+mynnet.class <- factor(mynnet.class[, 1], levels = c("benign", "malignant"))
+
+
+table(mynnet.class,BC_transformed$Class)
 
 
 
@@ -100,15 +113,15 @@ data(BreastCancer)
 
 ```{r}
 
-
-
-#Decision trees Model
+#Decision trees
+library(MASS)
 library(rpart)
+
 mytree <- rpart(Class ~ ., BreastCancer)
 plot(mytree); text(mytree) 
 summary(mytree)
-
 mytree.pred <- predict(mytree,BreastCancer,type="class")
+
 table(mytree.pred,BreastCancer$Class)
 
 
@@ -117,6 +130,7 @@ table(mytree.pred,BreastCancer$Class)
 
 ```{r}
 
+
 # Leave-1-Out Cross Validation (LOOCV)
 ans <- numeric(length(BreastCancer[,1]))
 for (i in 1:length(BreastCancer[,1])) {
@@ -124,10 +138,13 @@ for (i in 1:length(BreastCancer[,1])) {
   mytree.pred <- predict(mytree,BreastCancer[i,],type="class")
   ans[i] <- mytree.pred
 }
+
 ans <- factor(ans,labels=levels(BreastCancer$Class))
+
 table(ans,BreastCancer$Class)
 
-# The same as above in this case
+# The same positives as above in this case
+
 
 ```
 
@@ -147,6 +164,11 @@ head(myqda.pred$class)
 table(myqda.pred$class,BreastCancer$Class)
 
 
+```
+
+
+```{r}
+
 
 #Regularised Discriminant Analysis
 library(klaR)
@@ -160,17 +182,22 @@ table(myrda.pred$class,BreastCancer$Class)
 
 
 ```{r}
-#Random Forests Model 
 
+#Random Forests
 library(randomForest)
+
 myrf <- randomForest(Class ~ ., BreastCancer)
 myrf.pred <- predict(myrf, BreastCancer)
 head(myrf.pred)
+
 table(myrf.pred, BreastCancer$Class)
+
 
 ```
 
+
 ```{r}
+
 combine.classes<-data.frame(myrf.pred, myrda.pred$class,#myqda.pred, 
                             mytree.pred,mynnet.pred,mysvm.pred, mynb.pred$class)
 head(combine.classes)
@@ -192,5 +219,26 @@ head(majority.vote)
 combine.classes[,7]<-rowSums(combine.classes[,-c(7,8)])
 combine.classes[,8]<-ifelse(combine.classes[,7]>=4, "malignant", "benign")
 table(combine.classes[,8], BreastCancer$Class)
+
+
+```
+
+
+```{r}
+
+confusion <- table(combine.classes[,6], BreastCancer$Class)
+
+# Calculate performance metrics
+accuracy <- sum(diag(confusion))/sum(confusion)
+precision <- diag(confusion)/colSums(confusion)
+recall <- diag(confusion)/rowSums(confusion)
+f1_score <- 2 * precision * recall / (precision + recall)
+
+# Print results
+cat("Accuracy: ", accuracy, "\n")
+cat("Precision: ", precision, "\n")
+cat("Recall: ", recall, "\n")
+cat("F1 Score: ", f1_score, "\n")
+
 ```
 

@@ -116,8 +116,7 @@ x.svm.prob <- predict(x.svm, type="prob", newdata=BreastCancer[ind == 2,], proba
 ## plot ROC curves to compare the performance of the individual classifiers
 ##
 
-# Output the plot to a PNG file for display on web.  To draw to the screen, 
-# comment this line out.
+# Output the plot to a PNG file for display on web. 
 png(filename="roc_curve_5_models.png", width=700, height=700)
 
 # load the ROCR package which draws the ROC curves

@@ -2,7 +2,9 @@
 title: "Iris_multipleClassifier"
 author: "Pooja"
 date: "2023-03-20"
-output: html_document
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -77,11 +79,6 @@ plot(mytree); text(mytree) # in "iris_tree.ps"
 summary(mytree)
 mytree.pred <- predict(mytree,iris,type="class")
 table(mytree.pred,iris$Species)
-# mytree.pred  setosa versicolor virginica
-#   setosa     50      0          0
-#   versicolor  0     47          1
-#   virginica   0      3         49
-
 
 
 ```
